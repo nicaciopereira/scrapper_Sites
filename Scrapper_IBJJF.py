@@ -63,10 +63,11 @@ Parameters ={
     'page':2
 }
 
-Page =135
-
+Page =1
 all_athletes = []
-while True:
+#while True:
+
+while Page<=3:
     Parameters['page'] = Page
     Soup_athletes = Getpage_content(Url, Headers, Parameters)
     Athletes = parseAthletes(Soup_athletes)
@@ -75,10 +76,10 @@ while True:
     print(Page)
     all_athletes.extend(Athletes) # pega lista joga em lista maior e lista menor ainda faz parte
     Page += 1
-print(all_athletes)
 
 df_Athletes = pd.json_normalize(all_athletes)
 df_Athletes
+print(df_Athletes)
 
 excel_File = r'C:\Users\DELL\Desktop\scrapper_Sites/athletes.xlsx'
 df_Athletes.to_excel(excel_File, index=False)
