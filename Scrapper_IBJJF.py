@@ -9,18 +9,14 @@ def Getpage_content(Url , Headers , Parameters):
     Soup = BeautifulSoup(Response, 'html.parser')
     return Soup
 
-def parseAthletes(Soup):
-
+def parseAthletes(Soup,Kimono,Category, Genero, Faxa, Filter_division ):
     Table = Soup.find('table')
     #print(Table)
-    
     if not Table:
         return None
-
     Athletes = []
     Rows = Table.find_all('tr')
     #print(Rows)
-
     if not Rows:
         return None
 
@@ -30,6 +26,7 @@ def parseAthletes(Soup):
         Name_cell = Row.find('td', class_ ='name-academy')
         Points_cell = Row.find('td', class_ ='pontuation' )
         Ranking_cell = Row.find('td', class_ ='position')
+
 
         Photo = Photo_Cell.find('img')['src']
         Name_tag = Name_cell.find('div', class_ ='name').find('a')
@@ -44,10 +41,19 @@ def parseAthletes(Soup):
             'Name': Name,
             'Details': Details,
             'Points': Points,
-            'Ranking': Ranking
+            'Ranking': Ranking,
+            'kimono': Kimono,
+            'category': Category,
+            'genero': Genero,
+            'faxa': Faxa,
+            'filter_division': Filter_division
         }
         Athletes.append(Athlete)
     return Athletes
+
+def List_filters(Soup, filter_id):
+    filters = Soup.find(id = filter_id).findAll('option')
+    return [item['value'] for item in filters[1:]]
 
 #cabeçario
 Domain = 'https://ibjjf.com'
@@ -60,22 +66,40 @@ Parameters ={
     'filters[gender]':'male',
     'filters[belt]':'black',
     'filters[weight]':None, 
-    'page':2
-}
+    'page':1
+    }
 
-Page =1
+Soup_filters = Getpage_content(Url, Headers, Parameters)
+
+Kimono = List_filters(Soup_filters, 'filters_s')
+Category = List_filters(Soup_filters, 'filters_ranking_category')
+Genero = List_filters(Soup_filters, 'filters_gender')
+Faxa = List_filters(Soup_filters, 'filters_belt')
+Filter_division = List_filters(Soup_filters, 'weight_filter')
+
+
+
 all_athletes = []
-#while True:
 
-while Page<=3:
-    Parameters['page'] = Page
-    Soup_athletes = Getpage_content(Url, Headers, Parameters)
-    Athletes = parseAthletes(Soup_athletes)
-    if Athletes is None:
-        break
-    print(Page)
-    all_athletes.extend(Athletes) # pega lista joga em lista maior e lista menor ainda faz parte
-    Page += 1
+for kim, categ, gend, faxa, dvsion in product(Kimono,Category, Genero, Faxa, Filter_division):
+    Page =1
+    #while True:
+
+    while Page<=2:
+        print(f'Scraping: {kim}, {categ}, {gend}, {faxa}, {dvsion} for page {Page}')
+        Parameters['filters[s]']:kim 
+        Parameters['filters[ranking_category]']:categ
+        Parameters['filters[gender]']:gend
+        Parameters['filters[belt]']:faxa
+        Parameters['filters[weight]']:dvsion 
+        Parameters['page']:Page
+        Soup_athletes = Getpage_content(Url, Headers, Parameters)
+        Athletes = parseAthletes(Soup_athletes,kim,categ,gend,faxa,dvsion)
+        if Athletes is None:
+            break
+    
+        all_athletes.extend(Athletes) # pega lista joga em lista maior e lista menor ainda faz parte
+        Page += 1
 
 df_Athletes = pd.json_normalize(all_athletes)
 df_Athletes
